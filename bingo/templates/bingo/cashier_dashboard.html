@@ -1,0 +1,231 @@
+{% extends "bingo/base.html" %}
+{% load i18n %}
+
+{% block content %}
+<h2>{% trans "Cashier Dashboard" %}</h2>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<div class="row">
+    <!-- Serial Key Status -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">{% trans "Current Serial Key Status" %}</h5>
+            </div>
+            <!-- MODIFIED: The card body is restructured for the new logic -->
+            <div class="card-body">
+                <p><strong>{% trans "Serial Key" %}:</strong> {{ serial_key.key }}</p>
+                <p><strong>{% trans "Package" %}:</strong> {{ package.name }}</p>
+                <p><strong>{% trans "Package Type" %}:</strong> {{ package.get_package_type_display }}</p>
+                <hr>
+                
+                <!-- ALWAYS SHOW TIME REMAINING (since all keys expire) -->
+                <p><strong>{% trans "Expires On" %}:</strong> {{ serial_key.valid_until|date:"M d, Y H:i" }}</p>
+                <div class="mt-2">
+                    <strong>{% trans "Time Remaining" %}:</strong>
+                    <div id="countdown-timer" class="h4 mt-2">
+                        <span class="badge badge-primary" id="days">0</span> {% trans "days" %}
+                        <span class="badge badge-primary" id="hours">0</span> {% trans "hours" %}
+                        <span class="badge badge-primary" id="minutes">0</span> {% trans "minutes" %}
+                        <span class="badge badge-primary" id="seconds">0</span> {% trans "seconds" %}
+                    </div>
+                    <div id="expired-message" class="alert alert-danger mt-2" style="display: none;">
+                        <strong>{% trans "This serial key has expired!" %}</strong>
+                    </div>
+                </div>
+
+                <!-- CONDITIONALLY SHOW CARD COUNT (only for fixed packages) -->
+                {% if package.package_type == 'fixed' %}
+                    <div class="mt-4">
+                        <strong>{% trans "Remaining Cards" %}:</strong>
+                        <div class="h4 mt-2">
+                            <span class="badge {% if remaining_cards > 10 %}badge-success{% elif remaining_cards > 0 %}badge-warning{% else %}badge-danger{% endif %}">
+                                {{ remaining_cards|default:0 }}
+                            </span>
+                            <small class="text-muted">/ {{ package.game_count }}</small>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- UNIFIED STATUS -->
+                <div class="mt-4">
+                    <strong>{% trans "Status" %}:</strong>
+                    <span class="badge {% if is_valid %}badge-success{% else %}badge-danger{% endif %}">
+                        {% if is_valid %}
+                            {% trans "Active" %}
+                        {% elif package.package_type == 'fixed' and remaining_cards <= 0 %}
+                            {% trans "Exhausted" %}
+                        {% else %}
+                            {% trans "Expired" %}
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">{% trans "Quick Actions" %}</h5>
+            </div>
+            <div class="card-body">
+                <!-- MODIFIED: The is_valid variable now correctly works for both package types -->
+                {% if is_valid %}
+                    <a href="{% url 'bingo:generate_card' %}" class="btn btn-primary btn-block mb-2">
+                        {% trans "Generate Bingo Cards" %}
+                    </a>
+                    <a href="{% url 'bingo:verify_card' %}" class="btn btn-success btn-block mb-2">
+                        {% trans "Verify Winning Card" %}
+                    </a>
+                    <a href="{% url 'bingo:play_game' %}" class="btn btn-warning btn-block mb-2">
+                        {% trans "Start Game Session" %}
+                    </a>
+                {% else %}
+                    <div class="alert alert-warning">
+                        {% if package.package_type == 'fixed' and remaining_cards <= 0 %}
+                            {% trans "Your card quota has been exhausted." %}
+                        {% else %}
+                            {% trans "Your serial key has expired." %}
+                        {% endif %}
+                        {% trans "Please contact your administrator for a new serial key." %}
+                    </div>
+                {% endif %}
+                
+                <hr>
+                <a href="{% url 'bingo:cashier_logout' %}" class="btn btn-outline-danger btn-block">
+                    {% trans "Logout" %}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Generate Form -->
+{% if is_valid %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">{% trans "Quick Generate Cards" %}</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'bingo:generate_card' %}">
+                    {% csrf_token %}
+                    <div class="form-row">
+                        <div class="col-md-4">
+                            <input type="number" name="count" class="form-control" value="1" min="1" max="50" required>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary">{% trans "Generate Cards" %}</button>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">
+                                {% if package.package_type == 'fixed' %}
+                                    {% blocktrans with remaining=remaining_cards|default:0 %}({{ remaining }} remaining){% endblocktrans %}
+                                {% else %}
+                                    {% blocktrans with date=serial_key.valid_until|date:"M d" %}(Unlimited until {{ date }}){% endblocktrans %}
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="mt-4">
+    <a href="{% url 'bingo:index' %}" class="btn btn-secondary">{% trans "Back to Home" %}</a>
+</div>
+
+<!-- Countdown Timer Script -->
+<!-- MODIFIED: Script is now included if valid_until exists, regardless of package type -->
+{% if serial_key.valid_until %}
+<script>
+    // Get the expiry date from Django template
+    const expiryDate = new Date("{{ serial_key.valid_until|date:'c' }}");
+    
+    function updateCountdown() {
+        const now = new Date();
+        const difference = expiryDate - now;
+        
+        if (difference <= 0) {
+            // Timer has expired
+            document.getElementById('countdown-timer').style.display = 'none';
+            document.getElementById('expired-message').style.display = 'block';
+            
+            // Optionally reload the page to update the UI
+            // Using a flag to prevent reload loops
+            if (!window.hasReloaded) {
+                window.hasReloaded = true;
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000); // Reload after 3 seconds to show message
+            }
+            
+            return;
+        }
+        
+        // Calculate time units
+        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+        
+        // Update the display
+        document.getElementById('days').textContent = days;
+        document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
+        document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
+        document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
+        
+        // Update badge colors based on time remaining
+        const badges = document.querySelectorAll('#countdown-timer .badge');
+        if (days === 0 && hours < 1) {
+            // Less than 1 hour - red
+            badges.forEach(badge => {
+                badge.classList.remove('badge-primary', 'badge-warning');
+                badge.classList.add('badge-danger');
+            });
+        } else if (days === 0) {
+            // Less than 1 day - warning
+            badges.forEach(badge => {
+                badge.classList.remove('badge-primary', 'badge-danger');
+                badge.classList.add('badge-warning');
+            });
+        } else {
+            // More than 1 day - primary
+            badges.forEach(badge => {
+                badge.classList.remove('badge-warning', 'badge-danger');
+                badge.classList.add('badge-primary');
+            });
+        }
+    }
+    
+    // Update immediately
+    updateCountdown();
+    
+    // Update every second
+    setInterval(updateCountdown, 1000);
+</script>
+{% endif %}
+
+<style>
+    #countdown-timer {
+        font-family: 'Courier New', monospace;
+    }
+    
+    #countdown-timer .badge {
+        min-width: 50px;
+        font-size: 1.2rem;
+        padding: 0.5rem 1rem;
+    }
+</style>
+{% endblock %}

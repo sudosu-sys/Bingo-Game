@@ -1,0 +1,641 @@
+{% extends "bingo/base.html" %}
+{% load i18n %}
+
+{% block content %}
+<h2>{% trans "Bingo Game Play" %}</h2>
+<p>{% trans "Select the participating Card IDs from the available list below. When a player calls 'Bingo!', press Pause and Verify." %}</p>
+
+<!-- Available Cards (valid, unused) -->
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="d-flex flex-wrap align-items-center mb-2">
+      <h5 class="card-title mb-2 mr-3">{% trans "Available Cards" %}</h5>
+      <div class="form-inline mb-2">
+        <input id="card-search" type="text" class="form-control mr-2" placeholder="{% trans 'Search (e.g. 001, 02, 1)' %}">
+        <button id="select-all-btn" class="btn btn-outline-success mr-2">{% trans "Select All (filtered)" %}</button>
+        <button id="deselect-all-btn" class="btn btn-outline-danger">{% trans "Deselect All" %}</button>
+      </div>
+    </div>
+
+    <div id="available-cards-grid" class="d-flex flex-wrap"></div>
+
+    <small class="text-muted d-block mt-2">
+      {% trans "Showing all cards that are unused" %} (<code>used=False</code>). {% trans "Click to toggle selection. Start is enabled only when at least one card is selected." %}
+    </small>
+  </div>
+</div>
+
+<!-- Selected / Participating Cards -->
+<div class="card mb-3">
+  <div class="card-body">
+    <h5 class="card-title mb-2">{% trans "Participating Card IDs (this round)" %}</h5>
+    <div id="cards-pillbox" class="mt-2"></div>
+    <button id="clear-cards-btn" type="button" class="btn btn-outline-secondary mt-2">{% trans "Clear Participants" %}</button>
+  </div>
+</div>
+
+<div class="mb-3">
+  <button id="start-btn" class="btn btn-success" disabled>{% trans "Start Game" %}</button>
+  <button id="pause-resume-btn" class="btn btn-warning" disabled>{% trans "Pause" %}</button>
+  <button id="verify-btn" class="btn btn-info" data-toggle="modal" data-target="#verifyModal" disabled style="display:none;">
+    {% trans "Verify Card" %}
+  </button>
+  <a href="{% url 'bingo:index' %}" class="btn btn-secondary">{% trans "Back to Home" %}</a>
+</div>
+
+<div>
+  <h4>{% trans "Called Numbers" %}:</h4>
+  <div id="called-numbers" style="font-size: 1.5em;"></div>
+</div>
+
+<div class="my-3">
+  <h5 id="countdown-label" style="display:none;">
+    {% trans "Starting in" %}: <span id="countdown-value"></span>
+  </h5>
+</div>
+
+<!-- Verify Modal -->
+<div class="modal fade" id="verifyModal" tabindex="-1" role="dialog" aria-labelledby="verifyModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="verifyModalLabel">{% trans "Verify Bingo Card" %}</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="{% trans 'Close' %}" onclick="resetVerifyModal()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Verify form -->
+        <form id="verify-form">
+          <div class="form-group">
+            <label for="verify-card-id">{% trans "Enter Card ID" %}:</label>
+            <input type="text" name="card_id" id="verify-card-id" class="form-control" maxlength="3" required>
+          </div>
+          <!-- Hidden inputs populated on submit -->
+          <input type="hidden" name="called_numbers" id="called-numbers-hidden">
+          <input type="hidden" name="allowed_cards" id="allowed-cards-hidden">
+          <button type="submit" class="btn btn-primary">{% trans "Verify" %}</button>
+        </form>
+        <hr>
+        <div id="verify-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Translations for JavaScript -->
+{{ translations|json_script:"translations" }}
+<script>
+  const translations = JSON.parse(document.getElementById('translations').textContent);
+</script>
+
+<script>
+  // Provide translations to JavaScript
+  const TRANSLATIONS = {
+    'Card': '{% trans "Card" %}',
+    'Remove': '{% trans "Remove" %}',
+    'no_longer_exists': '{% trans "no longer exists." %}',
+    'just_been_used': '{% trans "has just been used and is no longer available." %}',
+    'verify_card_status_error': '{% trans "Could not verify card status right now." %}',
+    'failed_load_cards': '{% trans "Failed to load available cards." %}',
+    'Number': '{% trans "Number" %}',
+    'Pause': '{% trans "Pause" %}',
+    'Resume': '{% trans "Resume" %}',
+    'valid_card_id': '{% trans "Please enter a valid 3-digit Card ID." %}',
+    'not_registered': '{% trans "is not registered for this round." %}',
+    'Place': '{% trans "Place" %}',
+    'Highlighted': '{% trans "Highlighted" %}',
+    'winning_cells': '{% trans "winning cells" %}',
+    'already_redeemed': '{% trans "(Note: this card has already been redeemed.)" %}',
+    'Row': '{% trans "Row" %}',
+    'Col': '{% trans "Col" %}',
+    'Main_diagonal': '{% trans "Main diagonal" %}',
+    'Anti_diagonal': '{% trans "Anti-diagonal" %}',
+    'Winning_lines': '{% trans "Winning line(s)" %}',
+    'Error_verifying': '{% trans "Error verifying card." %}'
+  };
+</script>
+
+<style>
+  /* chips for participating cards */
+  .card-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: .25rem .5rem;
+    margin: .125rem;
+    font-weight: 600;
+    border-radius: 9999px;
+    background: #e9f2ff;
+    border: 1px solid #cfe0ff;
+  }
+  .card-chip .x {
+    cursor: pointer;
+    font-weight: 700;
+    margin-left: .35rem;
+  }
+
+  /* available cards grid */
+  .card-tile {
+    user-select: none;
+    cursor: pointer;
+    border: 1px solid #dcdcdc;
+    border-radius: .5rem;
+    padding: .5rem .75rem;
+    margin: .25rem;
+    font-weight: 700;
+    min-width: 64px;
+    text-align: center;
+    transition: all .15s ease;
+    background: #fff;
+  }
+  .card-tile:hover { box-shadow: 0 0 0 2px rgba(0,123,255,.15); }
+  .card-tile.selected {
+    background: #e6ffe6;
+    border-color: #8fd98f;
+    box-shadow: inset 0 0 0 2px rgba(40,167,69,.5);
+  }
+  .card-tile.disabled {
+    opacity: .5;
+    cursor: not-allowed;
+  }
+
+  /* winner grid rendering */
+  .winner-grid table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .winner-grid th, .winner-grid td {
+    text-align: center;
+    border: 1px solid #333;
+    padding: .5rem;
+    font-size: 1.1rem;
+  }
+  .winner-grid th {
+    background: #f7f7f7;
+    font-weight: 700;
+  }
+  .winner-grid td.win {
+    background: rgba(40,167,69,.15); /* soft green */
+    box-shadow: inset 0 0 0 2px rgba(40,167,69,.6);
+    font-weight: 700;
+  }
+  .winner-grid .legend {
+    font-size: .9rem;
+  }
+</style>
+
+<script>
+  // Server-provided data
+  let numbers = {{ numbers|safe }};
+
+  // API endpoints
+  const CARD_STATUS_URL = "{% url 'bingo:card_status' %}";
+  const AVAILABLE_CARDS_URL = "{% url 'bingo:available_cards' %}";
+
+  // State
+  let intervalId = null;
+  let currentIndex = 0;
+  let calledNumbers = [];
+
+  let isPaused = false;
+  // snapshot at pause time
+  let pausedSnapshot = [];
+
+  // Participating cards for this round (strings like "001")
+  let participatingCards = [];
+
+  // Available (unused) cards fetched from backend
+  let availableCards = [];       // e.g., ["001","002",...]
+  let filteredCards = [];        // search-filtered
+
+  // UI refs
+  const startBtn = document.getElementById('start-btn');
+  const pauseResumeBtn = document.getElementById('pause-resume-btn');
+  const verifyBtn = document.getElementById('verify-btn');
+
+  const calledDiv = document.getElementById('called-numbers');
+  const countdownLabel = document.getElementById('countdown-label');
+  const countdownValue = document.getElementById('countdown-value');
+
+  const cardsPillbox = document.getElementById('cards-pillbox');
+  const clearCardsBtn = document.getElementById('clear-cards-btn');
+
+  const grid = document.getElementById('available-cards-grid');
+  const searchInput = document.getElementById('card-search');
+  const selectAllBtn = document.getElementById('select-all-btn');
+  const deselectAllBtn = document.getElementById('deselect-all-btn');
+
+  // Settings
+  const COUNTDOWN_SECONDS = 3;     // adjust if needed
+  const CALL_INTERVAL_MS = 2000;   // time between calls
+
+  // Utilities
+  function toThreeDigit(val) {
+    const s = (val || '').trim();
+    if (!/^\d{1,3}$/.test(s)) return null;
+    const n = parseInt(s, 10);
+    if (n < 0 || n > 999) return null;
+    return String(n).padStart(3, '0');
+  }
+
+  function renderCardChips() {
+    cardsPillbox.innerHTML = '';
+    participatingCards.forEach(id => {
+      const span = document.createElement('span');
+      span.className = 'card-chip';
+      span.innerHTML = `${TRANSLATIONS.Card} ${id}<span class="x" data-id="${id}" title="${TRANSLATIONS.Remove}">&times;</span>`;
+      cardsPillbox.appendChild(span);
+    });
+    startBtn.disabled = participatingCards.length === 0;
+    // reflect selection in tiles
+    syncTileSelection();
+  }
+
+  cardsPillbox.addEventListener('click', (e) => {
+    if (e.target.classList.contains('x')) {
+      const id = e.target.getAttribute('data-id');
+      participatingCards = participatingCards.filter(x => x !== id);
+      renderCardChips();
+    }
+  });
+
+  clearCardsBtn.addEventListener('click', () => {
+    participatingCards = [];
+    renderCardChips();
+  });
+
+  function tileHtml(id, selected) {
+    return `<div class="card-tile ${selected ? 'selected' : ''}" data-id="${id}">${id}</div>`;
+  }
+
+  function renderGrid() {
+    grid.innerHTML = '';
+    filteredCards.forEach(id => {
+      const selected = participatingCards.includes(id);
+      grid.insertAdjacentHTML('beforeend', tileHtml(id, selected));
+    });
+  }
+
+  function syncTileSelection() {
+    const tiles = grid.querySelectorAll('.card-tile');
+    tiles.forEach(tile => {
+      const id = tile.getAttribute('data-id');
+      if (participatingCards.includes(id)) {
+        tile.classList.add('selected');
+      } else {
+        tile.classList.remove('selected');
+      }
+    });
+  }
+
+  function applySearch() {
+    const q = (searchInput.value || '').trim();
+    if (!q) {
+      filteredCards = availableCards.slice();
+      renderGrid();
+      return;
+    }
+    // allow partial matching: "1" matches 001, 011, 101, etc.
+    const rx = new RegExp(q.replace(/[.*+?^${}()|[```\```/g, '\\$&')); // basic escape
+    filteredCards = availableCards.filter(id => rx.test(id));
+    renderGrid();
+  }
+
+  grid.addEventListener('click', async (e) => {
+    const tile = e.target.closest('.card-tile');
+    if (!tile) return;
+    const id = tile.getAttribute('data-id');
+
+    // Re-validate the card is still unused before toggling (race-safety if another game used it)
+    try {
+      const resp = await fetch(`${CARD_STATUS_URL}?card_id=${encodeURIComponent(id)}`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      const data = await resp.json();
+      if (!data.exists) {
+        tile.classList.add('disabled');
+        alert(`${TRANSLATIONS.Card} ${id} ${TRANSLATIONS.no_longer_exists}`);
+        return;
+      }
+      if (data.used) {
+        tile.classList.add('disabled');
+        alert(`${TRANSLATIONS.Card} ${id} ${TRANSLATIONS.just_been_used}`);
+        // Also remove if we had it selected
+        participatingCards = participatingCards.filter(x => x !== id);
+        renderCardChips();
+        return;
+      }
+    } catch (err) {
+      alert(TRANSLATIONS.verify_card_status_error);
+      return;
+    }
+
+    // Toggle selection
+    if (participatingCards.includes(id)) {
+      participatingCards = participatingCards.filter(x => x !== id);
+    } else {
+      participatingCards.push(id);
+      participatingCards.sort();
+    }
+    renderCardChips();
+  });
+
+  searchInput.addEventListener('input', applySearch);
+
+  selectAllBtn.addEventListener('click', () => {
+    // Add all filtered (visible) to participating
+    const merged = new Set([...participatingCards, ...filteredCards]);
+    participatingCards = Array.from(merged).sort();
+    renderCardChips();
+  });
+
+  deselectAllBtn.addEventListener('click', () => {
+    // Remove all filtered from participating
+    const filt = new Set(filteredCards);
+    participatingCards = participatingCards.filter(id => !filt.has(id));
+    renderCardChips();
+  });
+
+  async function fetchAvailableCards() {
+    try {
+      const resp = await fetch(AVAILABLE_CARDS_URL, { headers: { 'X-Requested-With': 'XMLHttpRequest' }});
+      const data = await resp.json();
+      // Expecting { cards: ["001","002", ...] }
+      availableCards = (data.cards || []).map(toThreeDigit).filter(Boolean);
+      filteredCards = availableCards.slice();
+      renderGrid();
+    } catch (err) {
+      grid.innerHTML = `<div class="text-danger">${TRANSLATIONS.failed_load_cards}</div>`;
+    }
+  }
+
+  function speakNumber(number) {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(`${TRANSLATIONS.Number} ${number}`);
+      window.speechSynthesis.speak(utterance);
+    }
+  }
+
+  function startCalling() {
+    if (intervalId) return;
+
+    intervalId = setInterval(function () {
+      if (currentIndex >= numbers.length) {
+        clearInterval(intervalId);
+        intervalId = null;
+
+        // End of round — allow verifying the full set
+        verifyBtn.disabled = false;
+        verifyBtn.style.display = 'inline-block';
+
+        pauseResumeBtn.disabled = true;
+        return;
+      }
+
+      const number = numbers[currentIndex];
+      speakNumber(number);
+      calledNumbers.push(number);
+      calledDiv.innerHTML += "<span class='badge badge-primary m-1'>" + number + "</span>";
+      currentIndex++;
+    }, CALL_INTERVAL_MS);
+  }
+
+  function startGame() {
+    // Disable start, enable pause
+    startBtn.disabled = true;
+    pauseResumeBtn.disabled = false;
+    pauseResumeBtn.textContent = TRANSLATIONS.Pause;
+    pauseResumeBtn.classList.remove('btn-primary');
+    pauseResumeBtn.classList.add('btn-warning');
+
+    isPaused = false;
+    pausedSnapshot = [];
+
+    // Hide/disable Verify during countdown/running
+    verifyBtn.disabled = true;
+    verifyBtn.style.display = 'none';
+
+    // Reset prior state
+    if (intervalId) {
+      clearInterval(intervalId);
+      intervalId = null;
+    }
+    currentIndex = 0;
+    calledNumbers = [];
+    calledDiv.innerHTML = "";
+
+    // Show countdown
+    let remaining = COUNTDOWN_SECONDS;
+    countdownLabel.style.display = 'block';
+    countdownValue.textContent = remaining;
+
+    const countdownTimer = setInterval(() => {
+      remaining -= 1;
+      countdownValue.textContent = remaining;
+      if (remaining <= 0) {
+        clearInterval(countdownTimer);
+        countdownLabel.style.display = 'none';
+
+        // begin calling after countdown
+        startCalling();
+      }
+    }, 1000);
+  }
+
+  function pauseGame() {
+    if (intervalId) {
+      clearInterval(intervalId);
+      intervalId = null;
+    }
+    isPaused = true;
+    // snapshot for verification at pause moment
+    pausedSnapshot = calledNumbers.slice();
+
+    // show/enable Verify while paused
+    verifyBtn.disabled = false;
+    verifyBtn.style.display = 'inline-block';
+
+    // toggle buttons
+    pauseResumeBtn.textContent = TRANSLATIONS.Resume;
+    pauseResumeBtn.classList.remove('btn-warning');
+    pauseResumeBtn.classList.add('btn-primary');
+    pauseResumeBtn.disabled = false;
+
+    startBtn.disabled = true;
+  }
+
+  function resumeGame() {
+    isPaused = false;
+    verifyBtn.disabled = true;
+    verifyBtn.style.display = 'none';
+
+    startCalling();
+
+    pauseResumeBtn.textContent = TRANSLATIONS.Pause;
+    pauseResumeBtn.classList.remove('btn-primary');
+    pauseResumeBtn.classList.add('btn-warning');
+    pauseResumeBtn.disabled = false;
+
+    startBtn.disabled = true;
+  }
+
+  pauseResumeBtn.addEventListener('click', function () {
+    if (!intervalId && !isPaused) return; // nothing to pause/resume until a round starts
+    if (isPaused) {
+      resumeGame();
+    } else {
+      pauseGame();
+    }
+  });
+
+  startBtn.addEventListener('click', startGame);
+
+  // Helper: ordinal suffix for places (1st, 2nd, 3rd, 4th, ...)
+  function ordinal(n) {
+    const s = ["th","st","nd","rd"], v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  }
+
+  // Build a winner grid HTML given numbers and winning cells
+  function renderWinnerGrid(cardId, gridNums, winningLines, alreadyUsed, placeText) {
+    const winSet = new Set((winningLines.cells || []).map(rc => rc.join(',')));
+    let html = `
+      <div class="winner-grid">
+        <h5>${TRANSLATIONS.Card} ${cardId}</h5>
+        <table class="table table-bordered mb-2">
+          <thead>
+            <tr><th>B</th><th>I</th><th>N</th><th>G</th><th>O</th></tr>
+          </thead>
+          <tbody>
+    `;
+    for (let r = 0; r < 5; r++) {
+      html += '<tr>';
+      for (let c = 0; c < 5; c++) {
+        const cellVal = gridNums[r][c];
+        const isWin = winSet.has(`${r},${c}`);
+        html += `<td class="${isWin ? 'win' : ''}">${cellVal}</td>`;
+      }
+      html += '</tr>';
+    }
+    html += `
+          </tbody>
+        </table>
+        <div class="legend">
+          <span class="badge badge-success">${TRANSLATIONS.Highlighted}</span> = ${TRANSLATIONS.winning_cells}
+          ${alreadyUsed ? `<br><small class="text-danger">${TRANSLATIONS.already_redeemed}</small>` : ``}
+          ${placeText ? `<br><small>${placeText}</small>` : ``}
+        </div>
+      </div>
+    `;
+    return html;
+  }
+
+  // Verification submit (AJAX)
+  document.getElementById('verify-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const entered = toThreeDigit(document.getElementById('verify-card-id').value);
+    if (!entered) {
+      document.getElementById('verify-result').innerHTML =
+        `<div class="alert alert-warning">${TRANSLATIONS.valid_card_id}</div>`;
+      return;
+    }
+    if (!participatingCards.includes(entered)) {
+      document.getElementById('verify-result').innerHTML =
+        `<div class="alert alert-danger">${TRANSLATIONS.Card} ${entered} ${TRANSLATIONS.not_registered}</div>`;
+      return;
+    }
+
+    // Use paused snapshot if paused; else use live list (e.g., after round end)
+    const numbersForCheck = (isPaused && pausedSnapshot.length) ? pausedSnapshot : calledNumbers;
+    document.getElementById('called-numbers-hidden').value = numbersForCheck.join(",");
+    document.getElementById('allowed-cards-hidden').value = JSON.stringify(participatingCards);
+
+    // Build request
+    const formData = new FormData();
+    formData.append('card_id', entered);
+    formData.append('called_numbers', document.getElementById('called-numbers-hidden').value);
+    formData.append('numbers_full', JSON.stringify(numbers));
+    // Send the participating card list so the server can enforce it
+    formData.append('allowed_cards', document.getElementById('allowed-cards-hidden').value);
+
+    fetch("{% url 'bingo:verify_card' %}", {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRFToken': '{{ csrf_token }}'
+      },
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.win) {
+        const wl = data.winning_lines || { rows: [], cols: [], diagonals: [], cells: [] };
+        const place = (typeof data.rank === "number" && data.rank > 0) ? `${TRANSLATIONS.Place}: <strong>${ordinal(data.rank)}</strong>` : "";
+        const placeLine = place ? ` — ${place}` : "";
+
+        if (Array.isArray(data.card_grid) && data.card_grid.length === 5) {
+          const gridHtml = renderWinnerGrid(data.card_id, data.card_grid, wl, !!data.already_used, place);
+          document.getElementById('verify-result').innerHTML =
+            `<div class="alert alert-success">
+               <strong>${TRANSLATIONS.Card} ${data.card_id}:</strong> ${data.message}${placeLine}
+             </div>${gridHtml}`;
+        } else {
+          // Fallback text if backend hasn't been updated to return card_grid
+          const rows = (wl.rows || []).map(r => `${TRANSLATIONS.Row} ${r + 1}`).join(", ");
+          const cols = (wl.cols || []).map(c => `${TRANSLATIONS.Col} ${c + 1}`).join(", ");
+          const diags = (wl.diagonals || []).map(d => d === "main" ? TRANSLATIONS.Main_diagonal : TRANSLATIONS.Anti_diagonal).join(", ");
+          const details = [];
+          if (rows) details.push(rows);
+          if (cols) details.push(cols);
+          if (diags) details.push(diags);
+
+          document.getElementById('verify-result').innerHTML =
+            `<div class="alert alert-success">
+               <strong>${TRANSLATIONS.Card} ${data.card_id}:</strong> ${data.message}${placeLine}
+               ${details.length ? `<br><small>${TRANSLATIONS.Winning_lines}: ${details.join(" | ")}</small>` : ""}
+               ${data.already_used ? `<br><small>${TRANSLATIONS.already_redeemed}</small>` : ""}
+             </div>`;
+        }
+      } else {
+        document.getElementById('verify-result').innerHTML =
+          `<div class="alert alert-danger">
+             <strong>${TRANSLATIONS.Card} ${data.card_id || ''}</strong> ${data.message}
+           </div>`;
+      }
+    })
+    .catch(() => {
+      document.getElementById('verify-result').innerHTML =
+        `<div class="alert alert-danger">${TRANSLATIONS.Error_verifying}</div>`;
+    });
+  });
+
+  function resetVerifyModal() {
+    document.getElementById('verify-card-id').value = "";
+    document.getElementById('verify-result').innerHTML = "";
+  }
+
+  // Optional UX: keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    // Space toggles pause/resume if the round has started
+    if (e.code === 'Space') {
+      e.preventDefault();
+      if (startBtn.disabled) {
+        if (isPaused) resumeGame(); else pauseGame();
+      }
+    }
+    // 'V' opens Verify if visible/enabled
+    if ((e.key === 'v' || e.key === 'V') && !verifyBtn.disabled && verifyBtn.style.display !== 'none') {
+      verifyBtn.click();
+    }
+  });
+
+  // Initial load: fetch available cards and render grid
+  fetchAvailableCards();
+</script>
+
+<!-- Include Bootstrap JS and dependencies -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+{% endblock %}

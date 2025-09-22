@@ -1,0 +1,23 @@
+{% extends "bingo/base.html" %}
+{% load i18n %}
+
+{% block content %}
+<h1>{% trans "Welcome to the Bingo Web App" %}</h1>
+<p>{% trans "This is your starting page. Use the navigation below to generate, verify, or play bingo." %}</p>
+
+{% if request.session.cashier_logged_in %}
+    <div class="alert alert-info">
+        <strong>{% trans "Cashier Mode" %}:</strong> {% blocktrans with serial_key=request.session.cashier_serial_key %}You are logged in with serial key <strong>{{ serial_key }}</strong>{% endblocktrans %}
+        <br><a href="{% url 'bingo:cashier_dashboard' %}" class="btn btn-sm btn-outline-primary mt-2">{% trans "Go to Dashboard" %}</a>
+    </div>
+{% endif %}
+
+<div class="mt-3">
+    <a href="{% url 'bingo:generate_card' %}" class="btn btn-primary">{% trans "Generate Bingo Cards" %}</a>
+    <a href="{% url 'bingo:verify_card' %}" class="btn btn-success">{% trans "Verify a Winning Card" %}</a>
+    <a href="{% url 'bingo:play_game' %}" class="btn btn-warning">{% trans "PLAY" %}</a>
+    {% if not request.session.cashier_logged_in %}
+        <a href="{% url 'bingo:cashier_login' %}" class="btn btn-info">{% trans "Cashier Login" %}</a>
+    {% endif %}
+</div>
+{% endblock %}

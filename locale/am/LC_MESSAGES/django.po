@@ -1,0 +1,506 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-09-21 19:43+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: bingo/templates/bingo/base.html:7
+msgid "Bingo Web App"
+msgstr ""
+
+#: bingo/templates/bingo/base.html:12
+msgid "Bingo App"
+msgstr ""
+
+#: bingo/templates/bingo/base.html:16
+msgid "Cashier"
+msgstr "ካሸር"
+
+#: bingo/templates/bingo/base.html:18
+msgid "Dashboard"
+msgstr "ዳሽቦርድ"
+
+#: bingo/templates/bingo/base.html:19
+#: bingo/templates/bingo/cashier_dashboard.html:87
+msgid "Logout"
+msgstr "ውጣ"
+
+#: bingo/templates/bingo/base.html:21
+#: bingo/templates/bingo/cashier_login.html:9
+#: bingo/templates/bingo/generate_card.html:124
+#: bingo/templates/bingo/index.html:20
+msgid "Cashier Login"
+msgstr "ካሸር መግቢያ"
+
+#: bingo/templates/bingo/cashier_dashboard.html:5
+msgid "Cashier Dashboard"
+msgstr ""
+
+#: bingo/templates/bingo/cashier_dashboard.html:20
+msgid "Current Serial Key Status"
+msgstr ""
+
+#: bingo/templates/bingo/cashier_dashboard.html:23
+#: bingo/templates/bingo/cashier_login.html:23
+#: bingo/templates/bingo/generate_card.html:120
+msgid "Serial Key"
+msgstr ""
+
+#: bingo/templates/bingo/cashier_dashboard.html:24
+msgid "Package"
+msgstr ""
+
+#: bingo/templates/bingo/cashier_dashboard.html:25
+msgid "Package Type"
+msgstr ""
+
+#: bingo/templates/bingo/cashier_dashboard.html:27
+#, python-format
+msgid "Fixed Count (%(count)s total cards)"
+msgstr ""
+
+#: bingo/templates/bingo/cashier_dashboard.html:29
+msgid "Monthly Unlimited"
+msgstr ""
+
+#: bingo/templates/bingo/cashier_dashboard.html:34
+msgid "Cards Generated"
+msgstr ""
+
+#: bingo/templates/bingo/cashier_dashboard.html:35
+msgid "Remaining Cards"
+msgstr ""
+
+#: bingo/templates/bingo/cashier_dashboard.html:41
+msgid "Valid Until"
+msgstr ""
+
+#: bingo/templates/bingo/cashier_dashboard.html:42
+msgid "Status"
+msgstr ""
+
+#: bingo/templates/bingo/cashier_dashboard.html:44
+msgid "Active"
+msgstr ""
+
+#: bingo/templates/bingo/cashier_dashboard.html:44
+msgid "Expired"
+msgstr ""
+
+#: bingo/templates/bingo/cashier_dashboard.html:61
+msgid "Quick Actions"
+msgstr ""
+
+#: bingo/templates/bingo/cashier_dashboard.html:66
+#: bingo/templates/bingo/generate_card.html:5
+#: bingo/templates/bingo/index.html:16
+msgid "Generate Bingo Cards"
+msgstr "የቢንጎ ካርዶችን ይፍጠሩ"
+
+#: bingo/templates/bingo/cashier_dashboard.html:69
+msgid "Verify Winning Card"
+msgstr ""
+
+#: bingo/templates/bingo/cashier_dashboard.html:72
+msgid "Start Game Session"
+msgstr ""
+
+#: bingo/templates/bingo/cashier_dashboard.html:77
+msgid "Your card quota has been exhausted."
+msgstr ""
+
+#: bingo/templates/bingo/cashier_dashboard.html:79 bingo/views.py:435
+msgid "Your serial key has expired."
+msgstr ""
+
+#: bingo/templates/bingo/cashier_dashboard.html:81
+msgid "Please contact your administrator for a new serial key."
+msgstr ""
+
+#: bingo/templates/bingo/cashier_dashboard.html:103
+msgid "Quick Generate Cards"
+msgstr ""
+
+#: bingo/templates/bingo/cashier_dashboard.html:113
+#: bingo/templates/bingo/generate_card.html:134
+msgid "Generate Cards"
+msgstr ""
+
+#: bingo/templates/bingo/cashier_dashboard.html:118
+#, python-format
+msgid "(%(remaining)s remaining)"
+msgstr ""
+
+#: bingo/templates/bingo/cashier_dashboard.html:120
+#, python-format
+msgid "(Unlimited until %(date)s)"
+msgstr ""
+
+#: bingo/templates/bingo/cashier_dashboard.html:133
+#: bingo/templates/bingo/cashier_login.html:30
+#: bingo/templates/bingo/generate_card.html:37
+#: bingo/templates/bingo/generate_card.html:138
+#: bingo/templates/bingo/play.html:43 bingo/templates/bingo/verify_card.html:24
+msgid "Back to Home"
+msgstr ""
+
+#: bingo/templates/bingo/cashier_login.html:18
+msgid ""
+"Enter your serial key to start a cashier session. You won't need to re-enter "
+"it for each card generation."
+msgstr ""
+
+#: bingo/templates/bingo/cashier_login.html:24
+msgid "Enter your serial key"
+msgstr ""
+
+#: bingo/templates/bingo/cashier_login.html:26
+msgid "Login"
+msgstr ""
+
+#: bingo/templates/bingo/generate_card.html:20
+#: bingo/templates/bingo/generate_card.html:25
+#, python-format
+msgid ""
+"Serial Key: <strong>%(serial_key)s</strong> — Generated now: "
+"<strong>%(generated)s</strong> (requested %(requested)s)"
+msgstr ""
+
+#: bingo/templates/bingo/generate_card.html:22
+#, python-format
+msgid "Remaining quota: <strong>%(remaining)s</strong>"
+msgstr ""
+
+#: bingo/templates/bingo/generate_card.html:27
+#, python-format
+msgid "Valid until: <strong>%(date)s</strong>"
+msgstr ""
+
+#: bingo/templates/bingo/generate_card.html:32
+msgid "PRINT ALL"
+msgstr ""
+
+#: bingo/templates/bingo/generate_card.html:33
+msgid "Generate More"
+msgstr ""
+
+#: bingo/templates/bingo/generate_card.html:35
+#: bingo/templates/bingo/generate_card.html:110
+#: bingo/templates/bingo/generate_card.html:136
+msgid "Back to Dashboard"
+msgstr ""
+
+#: bingo/templates/bingo/generate_card.html:47
+msgid "Card ID"
+msgstr ""
+
+#: bingo/templates/bingo/generate_card.html:65
+msgid "PRINT"
+msgstr ""
+
+#: bingo/templates/bingo/generate_card.html:109
+#: bingo/templates/bingo/index.html:10
+msgid "Cashier Mode"
+msgstr ""
+
+#: bingo/templates/bingo/generate_card.html:109
+#, python-format
+msgid "Using serial key <strong>%(serial_key)s</strong>"
+msgstr ""
+
+#: bingo/templates/bingo/generate_card.html:110
+msgid "You don't need to enter the serial key again."
+msgstr ""
+
+#: bingo/templates/bingo/generate_card.html:121
+msgid "Enter serial key"
+msgstr ""
+
+#: bingo/templates/bingo/generate_card.html:123
+msgid ""
+"This key controls how many cards you can generate (or the time window if "
+"unlimited)."
+msgstr ""
+
+#: bingo/templates/bingo/generate_card.html:124
+msgid "Tip: Use"
+msgstr ""
+
+#: bingo/templates/bingo/generate_card.html:124
+msgid "to avoid re-entering your serial key."
+msgstr ""
+
+#: bingo/templates/bingo/generate_card.html:130
+msgid "How many cards to generate now"
+msgstr ""
+
+#: bingo/templates/bingo/index.html:5
+msgid "Welcome to the Bingo Web App"
+msgstr ""
+
+#: bingo/templates/bingo/index.html:6
+msgid ""
+"This is your starting page. Use the navigation below to generate, verify, or "
+"play bingo."
+msgstr ""
+
+#: bingo/templates/bingo/index.html:10
+#, python-format
+msgid "You are logged in with serial key <strong>%(serial_key)s</strong>"
+msgstr ""
+
+#: bingo/templates/bingo/index.html:11
+msgid "Go to Dashboard"
+msgstr ""
+
+#: bingo/templates/bingo/index.html:17
+msgid "Verify a Winning Card"
+msgstr ""
+
+#: bingo/templates/bingo/index.html:18
+msgid "PLAY"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:5
+msgid "Bingo Game Play"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:6
+msgid ""
+"Select the participating Card IDs from the available list below. When a "
+"player calls 'Bingo!', press Pause and Verify."
+msgstr ""
+
+#: bingo/templates/bingo/play.html:12
+msgid "Available Cards"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:14
+msgid "Search (e.g. 001, 02, 1)"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:15
+msgid "Select All (filtered)"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:16
+msgid "Deselect All"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:23
+msgid "Showing all cards that are unused"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:23
+msgid ""
+"Click to toggle selection. Start is enabled only when at least one card is "
+"selected."
+msgstr ""
+
+#: bingo/templates/bingo/play.html:31
+msgid "Participating Card IDs (this round)"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:33
+msgid "Clear Participants"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:38
+msgid "Start Game"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:39 bingo/templates/bingo/play.html:102
+msgid "Pause"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:41 bingo/templates/bingo/verify_card.html:21
+msgid "Verify Card"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:47
+msgid "Called Numbers"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:53
+msgid "Starting in"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:62 bingo/templates/bingo/verify_card.html:5
+msgid "Verify Bingo Card"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:63
+msgid "Close"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:71
+msgid "Enter Card ID"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:77
+msgid "Verify"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:95
+msgid "Card"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:96
+msgid "Remove"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:97
+msgid "no longer exists."
+msgstr ""
+
+#: bingo/templates/bingo/play.html:98
+msgid "has just been used and is no longer available."
+msgstr ""
+
+#: bingo/templates/bingo/play.html:99
+msgid "Could not verify card status right now."
+msgstr ""
+
+#: bingo/templates/bingo/play.html:100
+msgid "Failed to load available cards."
+msgstr ""
+
+#: bingo/templates/bingo/play.html:101
+msgid "Number"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:103
+msgid "Resume"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:104
+msgid "Please enter a valid 3-digit Card ID."
+msgstr ""
+
+#: bingo/templates/bingo/play.html:105
+msgid "is not registered for this round."
+msgstr ""
+
+#: bingo/templates/bingo/play.html:106
+msgid "Place"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:107
+msgid "Highlighted"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:108
+msgid "winning cells"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:109
+msgid "(Note: this card has already been redeemed.)"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:110
+msgid "Row"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:111
+msgid "Col"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:112
+msgid "Main diagonal"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:113
+msgid "Anti-diagonal"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:114
+msgid "Winning line(s)"
+msgstr ""
+
+#: bingo/templates/bingo/play.html:115
+msgid "Error verifying card."
+msgstr ""
+
+#: bingo/templates/bingo/verify_card.html:11
+#, python-format
+msgid "Verified Card ID: <strong>%(card_id)s</strong>"
+msgstr ""
+
+#: bingo/templates/bingo/verify_card.html:18
+msgid "Enter Card ID to Verify"
+msgstr ""
+
+#: bingo/views.py:92 bingo/views.py:371
+msgid "Invalid serial key."
+msgstr ""
+
+#: bingo/views.py:103 bingo/views.py:383
+msgid "This serial key has no remaining card quota."
+msgstr ""
+
+#: bingo/views.py:109
+msgid "This serial key is expired or not valid at the moment."
+msgstr ""
+
+#: bingo/views.py:150
+#, python-format
+msgid ""
+"Generated %(allowed)d of %(requested)d requested card(s) due to serial key "
+"quota."
+msgstr ""
+
+#: bingo/views.py:257
+msgid "This card is not registered for the current round."
+msgstr ""
+
+#: bingo/views.py:272
+msgid "Invalid card data."
+msgstr ""
+
+#: bingo/views.py:315
+msgid "Card Verified as Winner!"
+msgstr ""
+
+#: bingo/views.py:315
+msgid "Card is not a winning card."
+msgstr ""
+
+#: bingo/views.py:365
+msgid "Please enter a serial key."
+msgstr ""
+
+#: bingo/views.py:388
+msgid "This serial key is expired or not valid."
+msgstr ""
+
+#: bingo/views.py:395
+#, python-format
+msgid "Successfully logged in with serial key: %(serial_key)s"
+msgstr ""
+
+#: bingo/views.py:404
+msgid "Successfully logged out."
+msgstr ""
+
+#: bingo/views.py:412
+msgid "Please log in first."
+msgstr ""
+
+#: bingo/views.py:417
+msgid "Session expired. Please log in again."
+msgstr ""
+
+#: bingo/views.py:423
+msgid "Serial key no longer exists. Please log in again."
+msgstr ""
+
+#: bingo/views.py:432
+msgid "Your serial key quota has been exhausted."
+msgstr ""

@@ -1,0 +1,25 @@
+{% extends "bingo/base.html" %}
+{% load i18n %}
+
+{% block content %}
+<h2>{% trans "Verify Bingo Card" %}</h2>
+{% if message %}
+    <div class="alert {% if win %}alert-success{% else %}alert-danger{% endif %}">
+        {{ message }}
+    </div>
+    {% if card %}
+      <p>{% blocktrans with card_id=card.card_id %}Verified Card ID: <strong>{{ card_id }}</strong>{% endblocktrans %}</p>
+    {% endif %}
+{% else %}
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="card_id">{% trans "Enter Card ID to Verify" %}:</label>
+            <input type="text" name="card_id" id="card_id" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-success">{% trans "Verify Card" %}</button>
+    </form>
+{% endif %}
+<a href="{% url 'bingo:index' %}" class="btn btn-secondary mt-3">{% trans "Back to Home" %}</a>
+{% endblock %}

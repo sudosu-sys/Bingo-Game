@@ -1,0 +1,36 @@
+{% extends "bingo/base.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="text-center mb-0">{% trans "Cashier Login" %}</h3>
+            </div>
+            <div class="card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+
+                <p class="text-muted">{% trans "Enter your serial key to start a cashier session. You won't need to re-enter it for each card generation." %}</p>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="serial_key">{% trans "Serial Key" %}</label>
+                        <input type="text" name="serial_key" id="serial_key" class="form-control" placeholder="{% trans 'Enter your serial key' %}" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">{% trans "Login" %}</button>
+                </form>
+
+                <div class="text-center mt-3">
+                    <a href="{% url 'bingo:index' %}" class="btn btn-secondary">{% trans "Back to Home" %}</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,93 @@
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>{% trans "Bingo Web App" %}</title>
+
+  <!-- Bootstrap 4 -->
+  <link rel="stylesheet"
+        href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <a class="navbar-brand" href="{% url 'bingo:index' %}">{% trans "Bingo App" %}</a>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navContent"
+          aria-controls="navContent" aria-expanded="false" aria-label="{% trans 'Toggle navigation' %}">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  <div class="collapse navbar-collapse" id="navContent">
+    <ul class="navbar-nav ml-auto">
+      {% if request.session.cashier_logged_in %}
+        <li class="nav-item">
+          <span class="navbar-text text-light mr-3">
+            {% trans "Cashier" %}: {{ request.session.cashier_serial_key }}
+          </span>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-light" href="{% url 'bingo:cashier_dashboard' %}">{% trans "Dashboard" %}</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-light" href="{% url 'bingo:cashier_logout' %}">{% trans "Logout" %}</a>
+        </li>
+      {% else %}
+        <li class="nav-item">
+          <a class="nav-link text-light" href="{% url 'bingo:cashier_login' %}">{% trans "Cashier Login" %}</a>
+        </li>
+      {% endif %}
+
+      <!-- Language Switcher -->
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle text-light" href="#" id="languageDropdown" role="button"
+          data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          {% get_current_language as CURRENT_LANG %}
+          {% if CURRENT_LANG == 'am' %}አማርኛ{% else %}English{% endif %}
+        </a>
+
+        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="languageDropdown" style="min-width: 10rem;">
+          <form method="post" action="{% url 'bingo:set_language' %}" style="display: none;" id="language-form-en">
+            {% csrf_token %}
+            <input type="hidden" name="language" value="en">
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          </form>
+          
+          <form method="post" action="{% url 'bingo:set_language' %}" style="display: none;" id="language-form-am">
+            {% csrf_token %}
+            <input type="hidden" name="language" value="am">
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          </form>
+          
+          <a href="#" onclick="document.getElementById('language-form-en').submit(); return false;"
+            class="dropdown-item{% if CURRENT_LANG == 'en' %} active{% endif %}">
+            English
+          </a>
+          
+          <a href="#" onclick="document.getElementById('language-form-am').submit(); return false;"
+            class="dropdown-item{% if CURRENT_LANG == 'am' %} active{% endif %}">
+            አማርኛ
+          </a>
+        </div>
+      </li>
+
+
+    </ul>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  {% block content %}{% endblock %}
+</div>
+
+<!-- Bootstrap JS bundle -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+<script>
+  // Ensure dropdown JS is initialized
+  $(function(){ $('#languageDropdown').dropdown(); });
+</script>
+</body>
+</html>

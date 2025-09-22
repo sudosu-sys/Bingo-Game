@@ -1,0 +1,146 @@
+{% extends "bingo/base.html" %}
+{% load i18n %}
+
+{% block content %}
+<h2>{% trans "Generate Bingo Cards" %}</h2>
+
+{% if error %}
+  <div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+{% if info %}
+  <div class="alert alert-info">{{ info }}</div>
+{% endif %}
+
+{% if cards %}
+  <div class="mb-3">
+    
+    
+            <div class="alert alert-secondary">
+      {% if package_type == 'fixed' %}
+        {% blocktrans with serial_key=serial_key generated=generated_count requested=requested_count %}Serial Key: <strong>{{ serial_key }}</strong> — Generated now: <strong>{{ generated }}</strong> (requested {{ requested }}){% endblocktrans %}
+        {% if remaining_after is not None %}
+          — {% blocktrans with remaining=remaining_after %}Remaining quota: <strong>{{ remaining }}</strong>{% endblocktrans %}
+        {% endif %}
+      {% else %}
+        {% blocktrans with serial_key=serial_key generated=generated_count requested=requested_count %}Serial Key: <strong>{{ serial_key }}</strong> — Generated now: <strong>{{ generated }}</strong> (requested {{ requested }}){% endblocktrans %}
+        {% if valid_until %}
+          — {% blocktrans with date=valid_until %}Valid until: <strong>{{ date }}</strong>{% endblocktrans %}
+        {% endif %}
+      {% endif %}
+    </div>
+
+    <button class="btn btn-info" onclick="printContent('cards-container')">{% trans "PRINT ALL" %}</button>
+    <a href="{% url 'bingo:generate_card' %}" class="btn btn-secondary">{% trans "Generate More" %}</a>
+    {% if is_cashier %}
+      <a href="{% url 'bingo:cashier_dashboard' %}" class="btn btn-outline-primary">{% trans "Back to Dashboard" %}</a>
+    {% endif %}
+    <a href="{% url 'bingo:index' %}" class="btn btn-outline-dark">{% trans "Back to Home" %}</a>
+
+
+  </div>
+
+  <div id="cards-container" class="row">
+    {% for data in cards %}
+      <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card" id="card-{{ data.card.card_id }}">
+                    <div class="card-header text-center">
+            {% trans "Card ID" %}: <strong>{{ data.card.card_id }}</strong>
+          </div>
+          <div class="card-body">
+            <table class="table table-bordered text-center mb-2" style="margin-bottom:0;">
+              <thead>
+                <tr><th>B</th><th>I</th><th>N</th><th>G</th><th>O</th></tr>
+              </thead>
+              <tbody>
+                {% for row in data.grid %}
+                  <tr>
+                    {% for num in row %}
+                      <td>{{ num }}</td>
+                    {% endfor %}
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+                        <div class="text-center mt-2">
+              <button class="btn btn-primary btn-sm" onclick="printSingleCard('card-{{ data.card.card_id }}')">{% trans "PRINT" %}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <script>
+    function printContent(elementId) {
+      var content = document.getElementById(elementId).innerHTML;
+      var printWindow = window.open('', '', 'width=800,height=600');
+      printWindow.document.write('<html><head><title>Print Cards</title>');
+      printWindow.document.write('<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">');
+      printWindow.document.write('<style>table {width: 100%; border-collapse: collapse;} th, td {border: 1px solid #000; padding: 5px; text-align: center;}</style>');
+      printWindow.document.write('</head><body>');
+      printWindow.document.write(content);
+      printWindow.document.write('</body></html>');
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    }
+    function printSingleCard(cardId) {
+      var content = document.getElementById(cardId).innerHTML;
+      var printWindow = window.open('', '', 'width=600,height=400');
+      printWindow.document.write('<html><head><title>Print Card</title>');
+      printWindow.document.write('<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">');
+      printWindow.document.write('<style>table {width: 100%; border-collapse: collapse;} th, td {border: 1px solid #000; padding: 5px; text-align: center;}</style>');
+      printWindow.document.write('</head><body>');
+      printWindow.document.write(content);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    }
+  </script>
+
+{% else %}
+  <div class="card">
+    <div class="card-body">
+            {% if is_cashier %}
+        <!-- Cashier mode - serial key from session -->
+        <div class="alert alert-info mb-3">
+          <strong>{% trans "Cashier Mode" %}:</strong> {% blocktrans with serial_key=session_serial_key %}Using serial key <strong>{{ serial_key }}</strong>{% endblocktrans %}
+          <br><small>{% trans "You don't need to enter the serial key again." %} <a href="{% url 'bingo:cashier_dashboard' %}">{% trans "Back to Dashboard" %}</a></small>
+        </div>
+      {% endif %}
+
+      <form method="post" action="{% url 'bingo:generate_card' %}">
+        {% csrf_token %}
+        
+        {% if not is_cashier %}
+          <!-- Standalone mode - show serial key input -->
+          <div class="form-group">
+            <label for="serial_key">{% trans "Serial Key" %}</label>
+            <input type="text" name="serial_key" id="serial_key" class="form-control" placeholder="{% trans 'Enter serial key' %}" value="{{ prefill_key|default:'' }}" required>
+            <small class="form-text text-muted">
+              {% trans "This key controls how many cards you can generate (or the time window if unlimited)." %}
+              <br><em>{% trans "Tip: Use" %} <a href="{% url 'bingo:cashier_login' %}">{% trans "Cashier Login" %}</a> {% trans "to avoid re-entering your serial key." %}</em>
+            </small>
+          </div>
+        {% endif %}
+
+        <div class="form-group">
+          <label for="count">{% trans "How many cards to generate now" %}</label>
+          <input type="number" name="count" id="count" class="form-control" value="1" min="1" max="200" required>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">{% trans "Generate Cards" %}</button>
+        {% if is_cashier %}
+          <a href="{% url 'bingo:cashier_dashboard' %}" class="btn btn-secondary">{% trans "Back to Dashboard" %}</a>
+        {% else %}
+          <a href="{% url 'bingo:index' %}" class="btn btn-secondary">{% trans "Back to Home" %}</a>
+        {% endif %}
+      </form>
+
+
+    </div>
+  </div>
+{% endif %}
+{% endblock %}
